@@ -3,9 +3,9 @@ import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
 import { useEffect } from 'react'
-import { upload } from './utils/web3storage'
 import axios from 'axios'
 import Alaa from './Alaa'
+
 function App() {
   const [count, setCount] = useState(0)
   const [did, setDid] = useState(null)
@@ -17,6 +17,7 @@ function App() {
   });
   const [vc, setVc] = useState(null)
   const [verfication, setVerification] = useState(null)
+  const [ipfsHash, setIPFSHash] = useState(null)
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prevState => ({
@@ -113,6 +114,38 @@ function App() {
     }
   }
 
+  const handleUploadToIPFS = async (record = {}) => {
+    return new Promise ((resolve, reject) => {
+    var ipfs = window.IpfsApi('localhost', '5001')
+    const Buffer = window.IpfsApi().Buffer;
+  
+    var buffer = Buffer(JSON.stringify(record));
+
+    ipfs.files.add(buffer, (error, result) => {
+      if(error)
+      {
+        console.error(error)
+        reject(error)
+        return
+      }
+      resolve(result[0].hash)
+      setIPFSHash(result[0].hash)
+      console.log('ipfs result', result)})
+    })
+  }
+  
+  const getFromIPFS = async (hash) => {
+    fetch("http://localhost:8080/ipfs/" + hash)
+  .then(response => {
+    return response.json()
+  })
+  .then(data => {
+    console.log(data) 
+  })
+  .catch(error => {
+    console.error("Error fetching data:", error);
+  });
+  }
 
   return (
     <>
@@ -153,6 +186,10 @@ function App() {
 
     <button onClick={()=>handleVerifyVC(JSON.parse(vc))}>Verify VC</button>
     {verfication && <p>{verfication.toString()}</p>}
+    <button onClick={handleUploadToIPFS}>Upload to IPFS</button>
+    {ipfsHash && <p>{ipfsHash}</p>}
+
+    <button onClick={()=>getFromIPFS(ipfsHash)}>Get from IPFS</button>
     <Alaa />
     </>
   )
